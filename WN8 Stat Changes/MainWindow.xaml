@@ -1,0 +1,368 @@
+﻿<Window x:Class="WN8_Stat_Changes.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WN8_Stat_Changes"
+        mc:Ignorable="d"
+        xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
+        Title="WN8 Changes &amp; Marks of Excellence Info" Icon="img\Illuminati.ico" Height="469" Width="1077" Loaded="Window_Loaded" WindowState="Maximized">
+    <Window.Resources>
+        <local:WN8ColorConverter x:Key="WN8ColorConverter"/>
+        <local:WinRateColorConverter x:Key="WinRateColorConverter"/>
+        <local:ForegroundColorConverter x:Key="ForegroundColorConverter"/>
+        <local:ChangeColorConverter x:Key="ChangeColorConverter"/>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <Style TargetType="DataGrid" x:Key="StyleDataGridFilter">
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="HeadersVisibility" Value="None"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style TargetType="DataGrid" x:Key="StyleDataGridFilterMoE" BasedOn="{StaticResource ResourceKey=StyleDataGridFilter}">
+            <Setter Property="HeadersVisibility" Value="Column"/>
+        </Style>
+        <ContextMenu x:Key="ContextMenuFilter">
+            <MenuItem Header="Check all" Click="MenuItem_Click"/>
+            <MenuItem Header="Uncheck all" Click="MenuItem_Click_1"/>
+            <MenuItem Header="Invert checked state" Click="MenuItem_Click_2"/>
+        </ContextMenu>
+        <Style x:Key="VerticalSeparatorStyle" TargetType="{x:Type Separator}" BasedOn="{StaticResource {x:Type Separator}}">
+            <Setter Property="Margin" Value="6,0,6,0"/>
+            <Setter Property="LayoutTransform">
+                <Setter.Value>
+                    <TransformGroup>
+                        <TransformGroup.Children>
+                            <TransformCollection>
+                                <RotateTransform Angle="90"/>
+                            </TransformCollection>
+                        </TransformGroup.Children>
+                    </TransformGroup>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="6">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400"/>
+            <ColumnDefinition Width="3"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="3"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="3"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="3"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Margin="-6" Name="gridOverlay" Grid.ColumnSpan="99" Grid.RowSpan="99" Panel.ZIndex="420" Visibility="Collapsed">
+            <Grid.Background>
+                <SolidColorBrush Color="Black" Opacity="0.8"/>
+            </Grid.Background>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Name="tbOverlayText" Text="RICHBLASTER IS A SEAL" Foreground="White" FontSize="30"/>
+                <ProgressBar IsIndeterminate="True" Width="500" Height="20"/>
+            </StackPanel>
+        </Grid>
+
+        <TextBox Name="TB_PlayerName" Text="" KeyDown="TB_PlayerName_KeyDown"/>
+        <Button Name="BT_GetPlayerStats" Content="Check Player" Grid.Column="2" Click="BT_GetPlayerStats_Click" Height="22" VerticalAlignment="Top"/>
+
+        <ComboBox Name="comboBoxServer" DisplayMemberPath="Value" SelectedValuePath="Key" Grid.Column="4" Width="75" SelectionChanged="comboBoxServer_SelectionChanged"/>
+        <ComboBox Name="comboBoxOldVersion" DisplayMemberPath="Value" SelectedValuePath="Key" Grid.Column="6" Width="50"/>
+        <TextBlock Text="→" Grid.Column="7" Grid.Row="0" FontSize="16" VerticalAlignment="Center"/>
+        <ComboBox Name="comboBoxNewVersion" DisplayMemberPath="Value" SelectedValuePath="Key" Grid.Column="8" Width="50"/>
+
+        <CheckBox Name="checkBoxMLGChecking" Content="MLG checking" IsChecked="False" Grid.Column="10" VerticalAlignment="Center" Checked="checkBoxMLGChecking_Checked" Unchecked="checkBoxMLGChecking_Unchecked"/>
+
+        <TextBlock Grid.Column="12" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="10">
+                            by Aimdrol 
+                            (<Hyperlink NavigateUri="http://forum.worldoftanks.eu/index.php?/topic/534976-wn8-wn8-changes-marks-of-excellence-tool-updated-200616/" RequestNavigate="Hyperlink_RequestNavigate">forum thread</Hyperlink>) 
+                            → <Hyperlink NavigateUri="http://forum.worldoftanks.eu/index.php?/topic/524379-marks-of-excellence-data-a-new-metric-has-been-born-190516-dank-meme-to-catch-your-attention/" RequestNavigate="Hyperlink_RequestNavigate">more MoE info</Hyperlink>
+        </TextBlock>
+
+        <Separator Grid.ColumnSpan="99" Grid.Row="2"/>
+        <Expander Header="Search, filter &amp; settings" Grid.Row="3" IsExpanded="True" Grid.ColumnSpan="99" BorderBrush="LightGray">
+            <Grid Margin="3">
+                <StackPanel Orientation="Horizontal">
+                    <GroupBox Header="Tier" Width="150">
+                        <DataGrid Name="dataGridTier" Style="{StaticResource StyleDataGridFilter}" Margin="3"
+                                  ContextMenu="{StaticResource ContextMenuFilter}" ContextMenuOpening="dataGridNation_ContextMenuOpening">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}"
+                                                      VerticalAlignment="Center" Click="CheckBox_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                    <GroupBox Header="Type" Width="150">
+                        <DataGrid Name="dataGridType" Style="{StaticResource StyleDataGridFilter}" Margin="3"
+                                  ContextMenu="{StaticResource ContextMenuFilter}" ContextMenuOpening="dataGridNation_ContextMenuOpening">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}"
+                                                      VerticalAlignment="Center" Click="CheckBox_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                    <GroupBox Header="Nation" Width="150">
+                        <DataGrid Name="dataGridNation" Style="{StaticResource StyleDataGridFilter}" Margin="3"
+                                  ContextMenu="{StaticResource ContextMenuFilter}" ContextMenuOpening="dataGridNation_ContextMenuOpening">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}"
+                                                      VerticalAlignment="Center" Click="CheckBox_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                    <StackPanel Orientation="Vertical">
+                        <GroupBox Header="Search">
+                            <TextBox Name="textBoxSearch" Width="400" TextChanged="textBoxSearch_TextChanged" Margin="3"/>
+                        </GroupBox>
+                        <GroupBox Header="Expected values">
+                            <StackPanel Margin="3">
+                                <CheckBox Name="checkBoxColumnsNewExpected" Content="Show new expected values" IsChecked="True" Click="checkBoxColumnsNewExpected_Click"/>
+                                <CheckBox Name="checkBoxColumnsOldExpected" Content="Show old expected values" IsChecked="True" Click="checkBoxColumnsNewExpected_Click"/>
+                                <CheckBox Name="checkBoxColumnsChangesExpected" Content="Show expected value changes" IsChecked="True" Click="checkBoxColumnsNewExpected_Click"/>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Misc.">
+                            <CheckBox Name="checkBoxMiscHideZeroBattleTanks" Content="Hide tanks with 0 battles in randoms" IsChecked="False"
+                                      Click="checkBoxMiscHideZeroBattleTanks_Click" Margin="3"/>
+                        </GroupBox>
+                    </StackPanel>
+                    <GroupBox Header="Marks of Excellence">
+                        <StackPanel Margin="3">
+                            <CheckBox Name="checkBoxMoE3" Content="Show tanks with 3 MoE" IsChecked="True" Click="checkBoxMoE3_Click"/>
+                            <CheckBox Name="checkBoxMoE2" Content="Show tanks with 2 MoE" IsChecked="True" Click="checkBoxMoE3_Click"/>
+                            <CheckBox Name="checkBoxMoE1" Content="Show tanks with 1 MoE" IsChecked="True" Click="checkBoxMoE3_Click"/>
+                            <CheckBox Name="checkBoxMoE0" Content="Show tanks with 0 MoE" IsChecked="True" Click="checkBoxMoE3_Click"/>
+                        </StackPanel>
+                    </GroupBox>
+                    <!--<GroupBox Header="Search &amp; expected values">
+                        <StackPanel HorizontalAlignment="Left">
+                            <TextBox Name="textBoxSearch" Width="400" TextChanged="textBoxSearch_TextChanged"/>
+                            <CheckBox Name="checkBoxColumnsNewExpected" Content="Show new expected values" IsChecked="True" Click="checkBoxColumnsNewExpected_Click"/>
+                            <CheckBox Name="checkBoxColumnsOldExpected" Content="Show old expected values" IsChecked="True" Click="checkBoxColumnsNewExpected_Click"/>
+                            <CheckBox Name="checkBoxColumnsChangesExpected" Content="Show expected value changes" IsChecked="True" Click="checkBoxColumnsNewExpected_Click"/>
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="Misc.">
+                        <CheckBox Name="checkBoxMiscHideZeroBattleTanks" Content="Hide tanks with 0 battles in randoms" IsChecked="False" Click="checkBoxMiscHideZeroBattleTanks_Click"/>
+                    </GroupBox>-->
+                </StackPanel>
+            </Grid>
+        </Expander>
+        <Expander Header="Marks of Excellence Information" Grid.Row="4" IsExpanded="False" Grid.ColumnSpan="99" BorderBrush="LightGray" Margin="0,3,0,0"
+                  Visibility="Collapsed" Name="ExpanderMOEDetails">
+            <StackPanel Orientation="Horizontal">
+                <GroupBox Header="Tier" Width="325">
+                    <DataGrid Name="dataGridTierMOE3" Style="{StaticResource StyleDataGridFilterMoE}" Margin="3"
+                                  ContextMenu="{StaticResource ContextMenuFilter}" ContextMenuOpening="dataGridNation_ContextMenuOpening">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Name}" Header="Name"/>
+                            <DataGridTextColumn Binding="{Binding MOE3}" Header="3 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE2}" Header="2 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE1}" Header="1 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE0}" Header="0 MoE"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+                <GroupBox Header="Type" Width="325">
+                    <DataGrid Name="dataGridTypeMOE3" Style="{StaticResource StyleDataGridFilterMoE}" Margin="3"
+                                  ContextMenu="{StaticResource ContextMenuFilter}" ContextMenuOpening="dataGridNation_ContextMenuOpening">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Name}" Header="Name"/>
+                            <DataGridTextColumn Binding="{Binding MOE3}" Header="3 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE2}" Header="2 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE1}" Header="1 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE0}" Header="0 MoE"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+                <GroupBox Header="Nation" Width="325">
+                    <DataGrid Name="dataGridNationMOE3" Style="{StaticResource StyleDataGridFilterMoE}" Margin="3"
+                                  ContextMenu="{StaticResource ContextMenuFilter}" ContextMenuOpening="dataGridNation_ContextMenuOpening">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Name}" Header="Name"/>
+                            <DataGridTextColumn Binding="{Binding MOE3}" Header="3 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE2}" Header="2 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE1}" Header="1 MoE"/>
+                            <DataGridTextColumn Binding="{Binding MOE0}" Header="0 MoE"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+            </StackPanel>
+        </Expander>
+        <DataGrid x:Name="DG_Tanks" Grid.Row="5" Grid.ColumnSpan="99" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Margin="0,3,0,0">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Name}" Header="Tank"/>
+                <DataGridTextColumn Binding="{Binding Type}" Header="Type"/>
+                <DataGridTextColumn Binding="{Binding Nation}" Header="Nation"/>
+                <DataGridTextColumn Binding="{Binding Tier}" Header="Tier"/>
+                <DataGridTextColumn Binding="{Binding WN8.Battles,StringFormat=N0}" Header="Battles"/>
+                <DataGridTextColumn Binding="{Binding MarksOfExcellence}" Header="MoE"/>
+                <DataGridTemplateColumn Header="Win Rate" SortMemberPath="WN8.WinRate">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid Background="{Binding WN8.WinRate,Converter={StaticResource WinRateColorConverter}}">
+                                <TextBlock Text="{Binding WN8.WinRate,StringFormat=P2}"
+                                       Margin="3,0,0,0" Foreground="{Binding WN8.WinRate,Converter={StaticResource ForegroundColorConverter},ConverterParameter=wr}"/>
+                            </Grid>
+
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Old WN8" SortMemberPath="WN8.WN8">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid Background="{Binding WN8.WN8,Converter={StaticResource WN8ColorConverter}}">
+                                <TextBlock Text="{Binding WN8.WN8,StringFormat=N0}"
+                                       Margin="3,0,0,0" Foreground="{Binding WN8.WN8,Converter={StaticResource ForegroundColorConverter},ConverterParameter=wn8}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="New WN8" SortMemberPath="WN8.WN8_New">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid Background="{Binding WN8.WN8_New,Converter={StaticResource WN8ColorConverter}}">
+                                <TextBlock Text="{Binding WN8.WN8_New,StringFormat=N0}"
+                                       Margin="3,0,0,0" Foreground="{Binding WN8.WN8_New,Converter={StaticResource ForegroundColorConverter},ConverterParameter=wn8}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Change" SortMemberPath="WN8.Change">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding WN8.Change,StringFormat=N0}" Foreground="{Binding WN8.Change,Converter={StaticResource ChangeColorConverter}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Change per battle" SortMemberPath="WN8.ChangePerBattle">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding WN8.ChangePerBattle,StringFormat=N4}" Foreground="{Binding WN8.ChangePerBattle,Converter={StaticResource ChangeColorConverter}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Damage" SortMemberPath="WN8.Damage">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding WN8.Damage,StringFormat=N2}" HorizontalAlignment="Right"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Binding="{Binding WN8.Kills,StringFormat=N2}" Header="Kills"/>
+                <DataGridTextColumn Binding="{Binding WN8.Spots,StringFormat=N2}" Header="Spots"/>
+                <DataGridTextColumn Binding="{Binding WN8.DecapPoints,StringFormat=N2}" Header="Decap"/>
+
+                <DataGridTextColumn Binding="{Binding ExpectedValuesNew.Damage,StringFormat=N2}" Header="New eDamage"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesNew.Kills,StringFormat=N2}" Header="New eKills"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesNew.WinRate,StringFormat=P2}" Header="New eWinRate"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesNew.Spots,StringFormat=N2}" Header="New eSpots"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesNew.DecapPoints,StringFormat=N2}" Header="New eDecap"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesOld.Damage,StringFormat=N2}" Header="Old eDamage"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesOld.Kills,StringFormat=N2}" Header="Old eKills"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesOld.WinRate,StringFormat=P2}" Header="Old eWinRate"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesOld.Spots,StringFormat=N2}" Header="Old eSpots"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesOld.DecapPoints,StringFormat=N2}" Header="Old eDecap"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesChange.Damage,StringFormat=N2}" Header="eDamage Change"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesChange.Kills,StringFormat=N2}" Header="eKills Change"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesChange.WinRate,StringFormat=P2}" Header="eWinRate Change"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesChange.Spots,StringFormat=N2}" Header="eSpots Change"/>
+                <DataGridTextColumn Binding="{Binding ExpectedValuesChange.DecapPoints,StringFormat=N2}" Header="eDecap Change"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="99" Name="gridOverallChanges">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Name="tbPlayerName" Text="Aim_Drol [S3AL]xxxxxxxx" FontWeight="Bold" FontSize="30"/>
+                <Image Name="imgClanLogo" Height="32" Width="32" Margin="3,0,0,0"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Grid.Row="1">
+               <TextBlock Name="tbOldRating" Text="2000" Grid.Column="0" Grid.Row="1" FontSize="24" VerticalAlignment="Bottom"/>
+                <TextBlock Text="→" Grid.Column="1" Grid.Row="1" FontSize="24" VerticalAlignment="Bottom"/>
+            <TextBlock Name="tbNewRating" Text="2100" Grid.Column="2" Grid.Row="1" FontSize="24" VerticalAlignment="Bottom"/>
+            <TextBlock Name="tbRatingChange" Text="+100" Grid.Column="4" Grid.Row="1" FontSize="24" VerticalAlignment="Bottom" Margin="3,0,0,0"/>
+            <TextBlock Name="tbVersions" Text="v22 → v23" Grid.Column="5" Grid.Row="1" VerticalAlignment="Bottom" FontStyle="Italic" Margin="6,0,0,0" FontSize="14"/> 
+            </StackPanel>
+
+            <Separator Grid.Column="1" Grid.RowSpan="2" Style="{StaticResource VerticalSeparatorStyle}" />
+            <Grid Grid.RowSpan="2" Grid.Column="2" VerticalAlignment="Bottom" Margin="0,-50,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="3 Marks of Excellence" Grid.Row="0" FontSize="18"/>
+                <TextBlock Name="tbMarksOfExellence3" Text="420" Grid.Column="2" Grid.Row="0" FontSize="18"/>
+                <TextBlock Text="2 Marks of Excellence" Grid.Row="1" FontSize="10"/>
+                <TextBlock Name="tbMarksOfExellence2" Text="420" Grid.Column="2" Grid.Row="1"  FontSize="10"/>
+                <TextBlock Text="1 Marks of Excellence" Grid.Row="2" FontSize="10"/>
+                <TextBlock Name="tbMarksOfExellence1" Text="420" Grid.Column="2" Grid.Row="2"  FontSize="10"/>
+                <TextBlock Text="0 Marks of Excellence" Grid.Row="3" FontSize="10"/>
+                <TextBlock Name="tbMarksOfExellence0" Text="420" Grid.Column="2" Grid.Row="3"  FontSize="10"/>
+            </Grid>
+            
+            <TextBlock Name="tbOldVersion" Text="v22" Grid.Column="0" Grid.Row="2" FontSize="18" Visibility="Collapsed"/>
+            <TextBlock Text="➡" Grid.Column="1" Grid.Row="2" FontSize="24" Visibility="Collapsed"/>
+            <TextBlock Name="tbNewVersion" Text="v23" Grid.Column="2" Grid.Row="2" FontSize="18" Visibility="Collapsed"/>
+
+        </Grid>
+        <!--<TextBlock Name="TB_WN8_Change" Grid.Row="1" Text="WN8 Change" FontSize="20"/>-->
+    </Grid>
+</Window>
